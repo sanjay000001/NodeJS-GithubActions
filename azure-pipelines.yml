@@ -8,8 +8,11 @@ pr:
     include:
       - main
 
+# pool:
+#   vmImage: 'ubuntu-latest'
 pool:
-  vmImage: 'ubuntu-latest'
+  name: Default  # Change this to match your agent pool name
+
 
 jobs:
 - job: BuildAndTest
