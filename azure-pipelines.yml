@@ -1,21 +1,41 @@
-# Node.js
-# Build a general Node.js project with npm.
-# Add steps that analyze code, save build artifacts, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
-
 trigger:
-- main
+  branches:
+    include:
+      - main
+  paths:
+    exclude:
+      - README.md
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: 'ubuntu-latest'
 
-steps:
-- task: NodeTool@0
-  inputs:
-    versionSpec: '20.x'
-  displayName: 'Install Node.js'
+stages:
+- stage: Build
+  jobs:
+  - job: BuildApp
+    steps:
+    - task: UseDotNet@2
+      inputs:
+        packageType: 'sdk'
+        version: '6.x'
+        installationPath: $(Agent.ToolsDirectory)/dotnet
 
-- script: |
-    npm install
-    npm run build
-  displayName: 'npm install and build'
+    - script: dotnet build --configuration Release
+      displayName: 'Build Application'
+
+    - script: dotnet test --configuration Release
+      displayName: 'Run Tests'
+
+- stage: Deploy
+  jobs:
+  - deployment: DeployWebApp
+    environment: production
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureWebApp@1
+            inputs:
+              azureSubscription: 'Azure Service Connection'
+              appName: 'my-web-app'
+              package: '$(System.DefaultWorkingDirectory)/build_output.zip'
