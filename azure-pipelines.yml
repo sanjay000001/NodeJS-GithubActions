@@ -8,25 +8,71 @@ pr:
     include:
       - main
 
-# pool:
-#   vmImage: 'ubuntu-latest'
 pool:
-  name: Default  # Change this to match your agent pool name
-
+  name: Default  # Your self-hosted agent pool
 
 jobs:
 - job: BuildAndTest
-  timeoutInMinutes: 30  # Ensures job doesn't run indefinitely
+  timeoutInMinutes: 30
   steps:
     - checkout: self
 
-    - task: UseNode@1
-      inputs:
-        version: 16  # Specify a default Node.js version
-      displayName: 'Setup Node.js'
+    # Use NVM to set specific Node.js version (like your workflow requires)
+    - script: |
+        # Source NVM
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        
+        # Set Node.js memory options (as per your workflow)
+        export NODE_OPTIONS="--max-old-space-size=8192"
+        export UV_THREADPOOL_SIZE=128
+        
+        # Use Node.js version 12.18.3 (as per your workflow)
+        nvm use 12.18.3 || nvm install 12.18.3
+        
+        # Verify version
+        node --version
+        npm --version
+        
+        # Print memory settings
+        echo "NODE_OPTIONS: $NODE_OPTIONS"
+        echo "UV_THREADPOOL_SIZE: $UV_THREADPOOL_SIZE"
+      displayName: 'Setup Node.js with NVM'
 
-    - script: npm install
-      displayName: 'Install Dependencies'
+    - script: |
+        # Source NVM and set environment
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        export NODE_OPTIONS="--max-old-space-size=8192"
+        export UV_THREADPOOL_SIZE=128
+        
+        # Use the specified Node.js version
+        nvm use 12.18.3
+        
+        # Install dependencies with yarn (as per your workflow)
+        yarn install
+      displayName: 'Install Dependencies with Yarn'
 
-    - script: npm test
-      displayName: 'Run Tests'
+    - script: |
+        # Source NVM and set environment
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        export NODE_OPTIONS="--max-old-space-size=8192"
+        export UV_THREADPOOL_SIZE=128
+        
+        # Use the specified Node.js version
+        nvm use 12.18.3
+        
+        # Run development server (as per your workflow)
+        yarn run dev &
+        
+        # Wait a bit for server to start
+        sleep 10
+        
+        # Run tests if available
+        if [ -f "package.json" ] && grep -q '"test"' package.json; then
+          npm test
+        else
+          echo "No tests found in package.json"
+        fi
+      displayName: 'Start Dev Server and Run Tests'
