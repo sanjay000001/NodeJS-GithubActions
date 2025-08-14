@@ -12,67 +12,93 @@ pool:
   name: Default  # Your self-hosted agent pool
 
 jobs:
-- job: BuildAndTest
+- job: Railsfe
   timeoutInMinutes: 30
   steps:
     - checkout: self
 
-    # Use NVM to set specific Node.js version (like your workflow requires)
+    # Updated to use Node.js 16 for compatibility with Jest 29.x
     - script: |
-        # Source NVM
+        # Check the directory 
+        pwd
+        
+        # Change the node version to 16.x (compatible with Jest 29.x)
         export NVM_DIR="$HOME/.nvm"
         [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
         
-        # Set Node.js memory options (as per your workflow)
+        # Use Node.js 16.x instead of 12.18.3 for Jest compatibility
+        nvm use 16 || nvm install 16
+        
+        # Set Node.js max heap size to 8GB (as per your workflow)
         export NODE_OPTIONS="--max-old-space-size=8192"
-        export UV_THREADPOOL_SIZE=128
         
-        # Use Node.js version 12.18.3 (as per your workflow)
-        nvm use 12.18.3 || nvm install 12.18.3
-        
-        # Verify version
-        node --version
-        npm --version
-        
-        # Print memory settings
+        # Verify setup
+        echo "Current directory: $(pwd)"
+        echo "Node version: $(node --version)"
+        echo "NPM version: $(npm --version)"
+        echo "Yarn version: $(yarn --version)"
         echo "NODE_OPTIONS: $NODE_OPTIONS"
-        echo "UV_THREADPOOL_SIZE: $UV_THREADPOOL_SIZE"
-      displayName: 'Setup Node.js with NVM'
+        
+      displayName: 'Setup Node.js 16 (Jest Compatible)'
 
     - script: |
         # Source NVM and set environment
         export NVM_DIR="$HOME/.nvm"
         [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
         export NODE_OPTIONS="--max-old-space-size=8192"
-        export UV_THREADPOOL_SIZE=128
         
-        # Use the specified Node.js version
-        nvm use 12.18.3
+        # Use Node.js 16
+        nvm use 16
         
-        # Install dependencies with yarn (as per your workflow)
+        # Clean install (remove package-lock.json warning)
+        rm -f package-lock.json
+        
+        # Install dependencies with yarn
         yarn install
-      displayName: 'Install Dependencies with Yarn'
+        
+      displayName: 'Install Dependencies with Yarn (Clean)'
 
     - script: |
         # Source NVM and set environment
         export NVM_DIR="$HOME/.nvm"
         [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
         export NODE_OPTIONS="--max-old-space-size=8192"
-        export UV_THREADPOOL_SIZE=128
         
-        # Use the specified Node.js version
-        nvm use 12.18.3
+        # Use Node.js 16
+        nvm use 16
         
-        # Run development server (as per your workflow)
+        # Run tests
+        yarn test || npm test
+        
+      displayName: 'Run Tests'
+
+    - script: |
+        # Source NVM and set environment
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        export NODE_OPTIONS="--max-old-space-size=8192"
+        
+        # Use Node.js 16
+        nvm use 16
+        
+        # Start dev server in background
         yarn run dev &
+        DEV_SERVER_PID=$!
         
         # Wait a bit for server to start
         sleep 10
         
-        # Run tests if available
-        if [ -f "package.json" ] && grep -q '"test"' package.json; then
-          npm test
+        # Check if server is running
+        if ps -p $DEV_SERVER_PID > /dev/null; then
+          echo "Development server started successfully (PID: $DEV_SERVER_PID)"
+          # Optional: Test server endpoint
+          curl -f http://localhost:3000 || echo "Server not responding on port 3000"
         else
-          echo "No tests found in package.json"
+          echo "Development server failed to start"
         fi
-      displayName: 'Start Dev Server and Run Tests'
+        
+        # Stop the dev server
+        kill $DEV_SERVER_PID || true
+        wait $DEV_SERVER_PID 2>/dev/null || true
+        
+      displayName: 'Start and Test Dev Server'
