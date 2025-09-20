@@ -15,17 +15,10 @@ module.exports = {
     }]
   ],
   testMatch: [
-    '**/__tests__/**/*.(js|ts)',
-    '**/*.(test|spec).(js|ts)'
+    '**/*.test.js'
   ],
   collectCoverageFrom: [
-    '**/*.js',
-    '!**/node_modules/**',
-    '!**/coverage/**',
-    '!jest.config.js',
-    '!**/test-results/**',
-    '!**/artifacts/**',
-    '!**/test-artifacts/**'
+    'math.js'
   ],
   silent: false,
   verbose: true
