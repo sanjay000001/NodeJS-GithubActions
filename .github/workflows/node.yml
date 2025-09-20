@@ -32,9 +32,8 @@ jobs:
       run: |
         mkdir -p test-artifacts
         cp -r test-results/* test-artifacts/ 2>/dev/null || true
-        cp -r coverage/* test-artifacts/ 2>/dev/null || true
-        cp -r artifacts/* test-artifacts/ 2>/dev/null || true
         cp junit.xml test-artifacts/ 2>/dev/null || true
+        cp coverage/lcov.info test-artifacts/ 2>/dev/null || true
         cd test-artifacts && zip -r ../test-reports.zip * 
         cd .. && ls -la test-reports.zip
     
