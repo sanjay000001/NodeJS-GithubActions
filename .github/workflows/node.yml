@@ -23,7 +23,20 @@ jobs:
       run: npm ci
     
     - name: Run tests
-      run: npm test
+      run: npm run test:coverage
+    
+    - name: Generate XML test reports
+      run: npm run test:xml
+    
+    - name: Create test reports zip
+      run: |
+        mkdir -p test-artifacts
+        cp -r test-results/* test-artifacts/ 2>/dev/null || true
+        cp -r coverage/* test-artifacts/ 2>/dev/null || true
+        cp -r artifacts/* test-artifacts/ 2>/dev/null || true
+        cp junit.xml test-artifacts/ 2>/dev/null || true
+        cd test-artifacts && zip -r ../test-reports.zip * 
+        cd .. && ls -la test-reports.zip
     
     - name: Generate build artifact
       run: |
@@ -36,7 +49,14 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: test-reports
-        path: artifacts/
+        path: test-artifacts/
+        retention-days: 5
+        
+    - name: Upload test reports zip
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-reports-zip
+        path: test-reports.zip
         retention-days: 5
     
     - name: Upload build artifacts
