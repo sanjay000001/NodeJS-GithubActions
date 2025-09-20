@@ -41,17 +41,10 @@ jobs:
     - name: Generate build artifact
       run: |
         mkdir -p build
-        cp server.js build/
+        cp math.js build/
         cp package.json build/
         echo "Build completed at $(date)" > build/build-info.txt
     
-    - name: Upload test artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-reports
-        path: test-artifacts/
-        retention-days: 5
-        
     - name: Upload test reports zip
       uses: actions/upload-artifact@v4
       with:
